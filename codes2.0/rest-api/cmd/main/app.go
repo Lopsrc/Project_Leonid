@@ -9,6 +9,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"go.mod/internal/user"
+	"go.mod/pkg/logging"
 )
 
 // func IndexHandler(w http.ResponseWriter, r *http.Request, params httprouter.Params){
@@ -17,11 +18,11 @@ import (
 // }
 
 func main(){
-	log.Println("Create router")
+	logger := logging.GetLogger() 
+	logger.Info("Create router")
 	router := httprouter.New() 
-	//router.GET("/:name", IndexHandler)
-	log.Println("register user handler")
-	handler := user.NewHandler()
+	logger.Info("register user handler")
+	handler := user.NewHandler(logger)
 	handler.Register(router)
 	start(router)
 
@@ -41,4 +42,5 @@ func start(router *httprouter.Router){
 	}
 	log.Println("server is listening port 0.0.0.0:1234")
 	log.Fatal(server.Serve(listener))
+	
 }
