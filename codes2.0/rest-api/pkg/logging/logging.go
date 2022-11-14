@@ -60,12 +60,12 @@ func init(){
 	
 	
 	//ЗАМЕНИТЬ "/home/serpc/projects/TP_L/Project_Leonid/codes2.0/rest-api/logs" на использование переменных 
-	err := os.MkdirAll("/home/serpc/projects/TP_L/Project_Leonid/codes2.0/rest-api/logs", 0644)
+	err := os.MkdirAll("/home/serpc/projects/TP_L/Project_L/codes2.0/rest-api/logs", 0644)
 	if err != nil  {
 		panic(err)
 	}
 	
-	allFile , err := os.OpenFile("/home/serpc/projects/TP_L/Project_Leonid/codes2.0/rest-api/logs/all.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0640)
+	allFile , err := os.OpenFile("/home/serpc/projects/TP_L/Project_L/codes2.0/rest-api/logs/all.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0640)
 	if err != nil {
 		panic(err)
 	}
