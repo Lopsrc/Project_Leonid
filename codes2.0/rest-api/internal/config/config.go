@@ -8,12 +8,21 @@ import (
 )
 
 type Config struct{
-	IsDebug *bool		`yaml:"is_debug"`
+	IsDebug *bool			`yaml:"is_debug"`
 	Listen struct {
-		Type string		`yaml:"type"`
-		BindIP string	`yaml:"bind_ip"`
-		Port string		`yaml:"port"`
-	}					`yaml:"Listen"`
+		Type string			`yaml:"type"`
+		BindIP string		`yaml:"bind_ip"`
+		Port string			`yaml:"port"`
+	}						`yaml:"Listen"`
+	Storage StorageConfig 	`yaml:"storage"`
+}
+
+type StorageConfig struct{
+	Host 		string `json:"host"`
+	Port 		string `json:"port"`
+	Database 	string `json:"database"`
+	Username 	string `json:"username"`
+	Password 	string `json:"password"`
 }
 
 var instance *Config
