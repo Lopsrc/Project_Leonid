@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 
-	"go.mod/pkg/client/postgresql/utils"
+	"go.mod/pkg/utils"
 	"go.mod/internal/config"
 	//"github.com/jackc/pgx/v5/pgxpool"
 )
