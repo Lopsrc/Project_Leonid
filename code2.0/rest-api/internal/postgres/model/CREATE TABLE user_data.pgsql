@@ -14,7 +14,12 @@
 --     weight SMALLINT 
 -- );
 --DROP TABLE UserAuth;
---SELECT * FROM UserAuth;
+
+-- DELETE FROM UserAuth WHERE login='serpan2002@mail.ru'; 
+
+
+
+SELECT * FROM UserAuth;
 -- DROP TABLE UserData;
 
 -- INSERT INTO UserData (user_name, sex, birthdate, weight) VALUES ('Sergey', 'man', '2002-04-04', 70);
@@ -22,5 +27,5 @@
 -- INSERT INTO UserData (user_name) VALUES ('Ivan');
 
 
--- SELECT * FROM UserData;
+SELECT * FROM UserData;
 --INSERT INTO UserAUTH (login, state, access_token, refresh_token) VALUES ('ivanIO', FALSE, 'access_token_02', 'refresh_token_02');
