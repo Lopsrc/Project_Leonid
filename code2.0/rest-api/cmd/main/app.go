@@ -25,16 +25,22 @@ const(
 	ENTER_ = 3605
 	DELETE_ = 3606
 	GET__ = 3704
-	CHANGE__ = 3705
-	DELETE__ = 3706
+	ADD_ = 3705
+	CHANGE__ = 3706
+	DELETE__ = 3707
 )
 func manage(entr_auth *model.AuthData, entr_data *model.UserData  ,pconn *ParamsConn) string {
 
 	
-	db := postgres.ConnectDB()			//подключаемся к базе данных
+	db, err := postgres.ConnectDB()			//подключаемся к базе данных
+	if err!=nil{panic(err)}
+	
 	defer db.Close()					//разрываем подключение в конце функции
 	
-	if postgres.FindData(db, entr_auth){	//ищим совпадение в таблице
+	fnd_state, err := postgres.FindData(db, entr_auth)
+	if err!=nil{panic(err)}
+
+	if fnd_state{	//ищим совпадение в таблице
 		fmt.Println("Совпадение найдено")
 		pconn.find_state = true
 	} else {
@@ -46,16 +52,18 @@ func manage(entr_auth *model.AuthData, entr_data *model.UserData  ,pconn *Params
 		if pconn.find_state {
 			return "Пользователь найден, регистрация невозможна"
 		}
-		err := postgres.AddData(db,entr_auth)
+		_, err := postgres.AddData(db,entr_auth)
 		if err!=nil {panic(err)}
-		if !(postgres.FindData(db,entr_auth)){return "Данные не найдены на этапе проверки после добавления в auth table"}
+		//if !(postgres.FindData(db,entr_auth)){return "Данные не найдены на этапе проверки после добавления в auth table"}
 		
-		err = postgres.AddUserData(db, entr_data, entr_auth.Id)
-		if err != nil {panic(err)}
+		
 	case ENTER_:	//поиск пользователя	возврат данных
 	case DELETE_:	//поиск пользователя	удаление данных
 	case GET__:		//поиск пользователя	возврат данных
 	case CHANGE__:	//поиск пользователя	изменение данных
+	case ADD_:
+		err := postgres.AddUserData(db, entr_data, entr_auth.Id)
+		if err != nil {panic(err)}
 	case DELETE__:	//поиск пользователя	удаление данных
 	default:
 		fmt.Println("Некорректный код действия action_state")
