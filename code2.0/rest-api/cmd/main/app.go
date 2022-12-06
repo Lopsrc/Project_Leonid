@@ -40,31 +40,53 @@ func manage(entr_auth *model.AuthData, entr_data *model.UserData  ,pconn *Params
 	fnd_state, err := postgres.FindData(db, entr_auth)
 	if err!=nil{panic(err)}
 
-	if fnd_state{	//ищим совпадение в таблице
+	if fnd_state{	//ищим совпадение в таблице, реализация аутентификации.
 		fmt.Println("Совпадение найдено")
 		pconn.find_state = true
 	} else {
 		fmt.Println("Совпадение не найдено")
 		pconn.find_state = false
 	}
+
+
 	switch pconn.action_state {
 	case REGISTER_: //поиск пользователя	добавление в таблицы!	возврат данных
-		if pconn.find_state {
-			return "Пользователь найден, регистрация невозможна"
-		}
+		if pconn.find_state {return "Пользователь найден, регистрация невозможна"}
+
 		_, err := postgres.AddData(db,entr_auth)
 		if err!=nil {panic(err)}
 		//if !(postgres.FindData(db,entr_auth)){return "Данные не найдены на этапе проверки после добавления в auth table"}
-		
+		return "Пользователь добавлен в базу"
 		
 	case ENTER_:	//поиск пользователя	возврат данных
+		if pconn.find_state {return "Пользователь найден, регистрация невозможна"}
+
+		return "Возврат данных" //придумать либо возврат кода по которому будет создаваться отчет, либо сразу составлять отчет и возвращать в main
+
 	case DELETE_:	//поиск пользователя	удаление данных
+		if !(pconn.find_state) {return "Пользователь не найден, удаление невозможно"}
+
+		err := postgres.DeleteData(db, entr_auth)
+		if err!=nil{panic(err)}
+
 	case GET__:		//поиск пользователя	возврат данных
+		if pconn.find_state {return "Пользователь найден, регистрация невозможна"}
 	case CHANGE__:	//поиск пользователя	изменение данных
+		if !(pconn.find_state) {return "Пользователь не найден, изменения невозможны"}
+
+		err := postgres.AddUserData(db, entr_data, entr_auth.Id)
+		if err!=nil{panic(err)}
+		return "Данные записаны"
+
 	case ADD_:
+		if pconn.find_state {return "Пользователь найден, регистрация невозможна"}
+
 		err := postgres.AddUserData(db, entr_data, entr_auth.Id)
 		if err != nil {panic(err)}
 	case DELETE__:	//поиск пользователя	удаление данных
+		if pconn.find_state {return "Пользователь найден, регистрация невозможна"}
+
+
 	default:
 		fmt.Println("Некорректный код действия action_state")
 	}
@@ -79,7 +101,7 @@ func main(){
 
 	pconn := ParamsConn{
 		find_state: false,		//нашли ли данные 
-		action_state: REGISTER_,	//код действия пользователя 
+		action_state: CHANGE__,	//код действия пользователя 
 	}
 	entr_user := model.UserData{
 		Name: "Sergey",
@@ -94,5 +116,5 @@ func main(){
 		Access_token:  "Access_token_01",
 		Refresh_token: "refresh_token_01",
 	}
-	manage(&entr_auth, &entr_user ,&pconn)
+	fmt.Println(manage(&entr_auth, &entr_user ,&pconn))
 }

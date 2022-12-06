@@ -15,42 +15,22 @@ const (
 	table_data = "UserData"
 )
 
+// func Auth(db *sql.DB, adat *model.AuthData) bool{
+	
+// 	return true
+// }
+
 func ConnectDB() (db *sql.DB, err error){				//подключение к базе данных
 	db, err = sql.Open("postgres", conn)	//подключаемся к базе данных, если не получается, то метод вернет ошибку в err
-	if err != nil {panic(err)}				//если err не нулевой указатель, то паникуем
+	//if err != nil {panic(err)}				//если err не нулевой указатель, то паникуем
 	fmt.Println("Connect db")
 	return db, err								//возвращаем указаетль на "бд"
 }
 
-// func GetTable(db *sql.DB) {			//получаем всю таблицу
-// 	query_buff := "SELECT * from " + table_auth		//Запрос
-// 	ch_data := model.AuthData{}						//Структура аутентификации
-// 	result, err := db.Query(query_buff)				//Отправляем запрос
-// 	if err != nil {panic(err)}						
-
-// 	for result.Next() { //с помощью .Next() возвращаем логическое значение о наличии строки в таблице
-// 		err := result.Scan(&ch_data.Id, &ch_data.Login, &ch_data.State, &ch_data.Access_token, &ch_data.Refresh_token) //запись в структуру аутентификации данных строки
-// 		if err != nil {panic(err)}
-// 		fmt.Println(ch_data)	//вывод в консоль строки
-// 	}
-// }
-// func GetTableData(db *sql.DB) {			//получаем всю таблицу
-// 	query_buff := "SELECT * from " + table_data		//Запрос
-// 	ch_data := model.UserData{}						//Структура аутентификации
-// 	result, err := db.Query(query_buff)				//Отправляем запрос
-// 	if err != nil {panic(err)}						
-
-// 	for result.Next() { //с помощью .Next() возвращаем логическое значение о наличии строки в таблице
-// 		err := result.Scan(&ch_data.Id, &ch_data.Name, &ch_data.Sex, &ch_data.Bithdate, &ch_data.Weight) //запись в структуру аутентификации данных строки
-// 		if err != nil {panic(err)}
-// 		fmt.Println(ch_data)	//вывод в консоль строки
-// 	}
-// }
-
-func FindData(db *sql.DB, tmp *model.AuthData) (bool, error)  {	//Поиск данных пользователя в таблице. Принимает указатели на объект БД и структуру аутентификации, введенную пользователем. Возвращает логическое значение 
+func FindData(db *sql.DB, tmp *model.AuthData) (result sql.Result, err error)  {	//Поиск данных пользователя в таблице. Принимает указатели на объект БД и структуру аутентификации, введенную пользователем. Возвращает логическое значение 
 	query_buff := "SELECT * from " + table_auth		//Запрос
 	
-	result, err := db.Query(query_buff)				//Выполняем запрос
+	result, err = db.QueryContext(ctx, query_buff)				//Выполняем запрос
 	if err != nil {
 		panic(err)
 	}
@@ -70,33 +50,31 @@ func FindData(db *sql.DB, tmp *model.AuthData) (bool, error)  {	//Поиск д�
 	return false, err		//если нет пользователя , то возвращаем false
 }
 
-func AddData(db *sql.DB, tmp *model.AuthData) (res bool, err error) {		//Добавляем значение в таблицу
+func AddData(db *sql.DB, tmp *model.AuthData) (result sql.Result, err error) {		//Добавляем значение в таблицу
 	query_buff := "insert into " + table_auth + " (login, state, access_token, refresh_token) values ('" + tmp.Login + "',"+strconv.FormatBool(tmp.State)+", '" + tmp.Access_token + "', '"+ tmp.Refresh_token +"')"
-	result, err := db.Exec(query_buff)
-	fmt.Println(result)
-	//fmt.Println(result.RowsAffected())
-	return res, err
+	result, err = db.Exec(query_buff)
+	return result, err
 
 }
 
-func AddUserData(db *sql.DB, tmp *model.UserData, id int) (err error) {		//Добавляем значение в таблицу
-	// query_buff := "insert into " + table_data + " (id, name, sex, birthdate, weight) values ("+strconv.Itoa(id)+", '" + tmp.Name + "', '" + tmp.Sex + "', '"+ tmp.Bithdate +"', "+strconv.Itoa(tmp.Weight)+")"
+func AddUserData(db *sql.DB, tmp *model.UserData, id int) (result sql.Result, err error) {		//Добавляем значение в таблицу
 	query_buff := "insert into " + table_data + " (id, user_name, sex, birthdate, weight) values ("+strconv.Itoa(id)+", '" + tmp.Name + "', '" + tmp.Sex + "', '"+ tmp.Bithdate +"', "+strconv.Itoa(tmp.Weight)+")"
 
-	result, err := db.Exec(query_buff)
-	fmt.Println(result)
-
-	//fmt.Println(result.RowsAffected())
-	return err
+	result, err = db.Exec(query_buff)
+	return result, err
 	
 }
 
-func DeleteAuthData(db *sql.DB, tmp *model.AuthData) (err error){	//удаляем данные из таблицы
+func DeleteAuthData(db *sql.DB, tmp *model.AuthData) (result sql.Result, err error){	//удаляем данные из таблицы
 	query_buff := "delete from "+table_auth+" where login = " + tmp.Login
-
-	result, err := db.Exec(query_buff, 2)
-	//if err != nil {panic(err)}
-
-	fmt.Println(result.RowsAffected()) // количество удаленных строк
-	return err
+	
+	result, err = db.Exec(query_buff, 2)
+	
+	return result, err
+}
+func DeleteUserData(db *sql.DB, tmp *model.AuthData) (result sql.Result, err error){	//удаляем данные из таблицы
+	query_buff_2 := "delete from "+table_data+" where login = " + tmp.Login
+	
+	result, err = db.Exec(query_buff_2, 2)
+	return result, err
 }
