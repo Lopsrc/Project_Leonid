@@ -5,7 +5,7 @@ import(
 	"context"
 	"fmt"
 	"time"
-	"go.mod/pkg/postgresql/config"
+	"go.mod/internal/config"
 	"go.mod/pkg/utils"
 	"log"
 	"github.com/jackc/pgx/v4"
