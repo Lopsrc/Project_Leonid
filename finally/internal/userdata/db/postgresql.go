@@ -16,10 +16,6 @@ type repository struct {
 	logger *logging.Logger
 }
 
-// FindAll implements authdata.Repository
-func (*repository) FindAll(ctx context.Context) (u []userdata.UserData, err error) {
-	panic("unimplemented")
-}
 
 func formatQuery(q string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(q, "\t", ""), "\n", " ")
@@ -44,43 +40,15 @@ func (r *repository) Create(ctx context.Context, user *userdata.UserData, id int
 	return nil
 }
 
-// Оставлю может нужна будет
-
-// func (r *repository) FindAll(ctx context.Context) (u []authdata.AuthData, err error) {			//Вряд ли нам нужен данный метод
-// q := `SELECT id, login FROM AuthData;`							//если нужно вывести все поля, то лучше это сделать через консоль на сервере
-// 	r.logger.Trace(fmt.Sprintf("SQL Query: %s", formatQuery(q)))
-
-// 	rows, err := r.client.Query(ctx, q)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	authors := make([]authdata.AuthData, 0)
-
-// 	for rows.Next() {
-// 		var ath author.Author
-
-// 		err = rows.Scan(&ath.ID, &ath.Name)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-
-// 		authors = append(authors, ath)
-// 	}
-
-// 	if err = rows.Err(); err != nil {
-// 		return nil, err
-// 	}
-
-// 	return authors, nil
-// }
 
 func (r *repository) FindOne(ctx context.Context, id int) (userdata.UserData, error) { //поиск пользователя
 	q := `SELECT id, user_name, sex, birthdate, weight FROM userdata WHERE id = $1` //запрос на поиск по login
 	r.logger.Trace(fmt.Sprintf("SQL Query: %s", formatQuery(q)))
 
 	var ath userdata.UserData                                                                                            //модель для заполнения
-	err := r.client.QueryRow(ctx, q, id).Scan(&ath.Id, &ath.Name, &ath.Sex, &ath.Birthdate, &ath.Weight) //выполнение запроса и заполнение полей созданной модели
+	res := r.client.QueryRow(ctx, q, id) //выполнение запроса и заполнение полей созданной модели
+	
+	err := res.Scan(&ath.Id, &ath.Name, &ath.Sex, &ath.Birthdate, &ath.Weight)
 	if err != nil {
 		return userdata.UserData{}, err
 	}
@@ -88,14 +56,31 @@ func (r *repository) FindOne(ctx context.Context, id int) (userdata.UserData, er
 	return ath, nil
 }
 
-func (r *repository) Update(ctx context.Context, user userdata.UserData) error {
-	//TODO implement me
-	panic("implement me")
+func (r *repository) Update(ctx context.Context, user *userdata.UserData) error {
+	q := `
+		UPDATE userdata
+		SET user_name = $2, sex = $3, birthdate = $4, weight = $5
+		WHERE id = $1
+		RETURNING id
+	`
+	
+	r.logger.Trace(fmt.Sprintf("SQL Query: %s", formatQuery(q)))
+
+	err := r.client.QueryRow(ctx, q, user.Id, user.Name, user.Sex, user.Birthdate, user.Weight).Scan(&user.Id)
+	if err!=nil{return err}
+	return nil
 }
 
 func (r *repository) Delete(ctx context.Context, id string) error {
-	//TODO implement me
-	panic("implement me")
+	q := `
+		DELETE FROM userdata RETURNING id=$1
+	`
+	
+	r.logger.Trace(fmt.Sprintf("SQL Query: %s", formatQuery(q)))
+
+	err := r.client.QueryRow(ctx, q, id).Scan(id)
+	if err!=nil{return err}
+	return nil
 }
 
 func NewRepository(client postgresql.Client, logger *logging.Logger) userdata.Repository {

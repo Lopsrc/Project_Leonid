@@ -17,9 +17,7 @@ type repository struct {
 }
 
 // FindAll implements authdata.Repository
-func (*repository) FindAll(ctx context.Context) (u []authdata.AuthData, err error) {
-	panic("unimplemented")
-}
+
 
 func formatQuery(q string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(q, "\t", ""), "\n", " ")
@@ -88,14 +86,31 @@ func (r *repository) FindOne(ctx context.Context, login string) (authdata.AuthDa
 	return ath, nil
 }
 
-func (r *repository) Update(ctx context.Context, user authdata.AuthData) error {
-	//TODO implement me
-	panic("implement me")
+func (r *repository) Update(ctx context.Context, user *authdata.AuthData) error {
+	q := `
+		UPDATE userdata
+		SET login = $2, state = $3, access_token = $4, refresh_token = $5
+		WHERE id = $1
+		RETURNING id
+	`
+	
+	r.logger.Trace(fmt.Sprintf("SQL Query: %s", formatQuery(q)))
+
+	err := r.client.QueryRow(ctx, q, user.Id, user.Login, user.State, user.Access_token, user.Refresh_token).Scan(&user.Id)
+	if err!=nil{return err}
+	return nil
 }
 
 func (r *repository) Delete(ctx context.Context, id string) error {
-	//TODO implement me
-	panic("implement me")
+	q := `
+		DELETE FROM userdata RETURNING id=$1
+	`
+	
+	r.logger.Trace(fmt.Sprintf("SQL Query: %s", formatQuery(q)))
+
+	err := r.client.QueryRow(ctx, q, id).Scan(id)
+	if err!=nil{return err}
+	return nil
 }
 
 func NewRepository(client postgresql.Client, logger *logging.Logger) authdata.Repository {
