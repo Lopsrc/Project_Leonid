@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/jackc/pgconn"
 	"go.mod/internal/authdata"
 	"go.mod/pkg/client/postgresql"
 	"go.mod/pkg/logging"
-	"strings"
 )
 
 type repository struct {
@@ -73,42 +75,48 @@ func (r *repository) Create(ctx context.Context, authdata *authdata.AuthData) er
 // 	return authors, nil
 // }
 
-func (r *repository) FindOne(ctx context.Context, login string) (authdata.AuthData, error) { //поиск пользователя
-	q := `SELECT id, login, state, access_token, refresh_token FROM userauth WHERE login = $1` //запрос на поиск по login
+func (r *repository) FindOne(ctx context.Context, auth *authdata.AuthData) (bool, error) { //поиск пользователя
+	q := `SELECT id FROM userauth WHERE login = $1` //запрос на поиск по login
 	r.logger.Trace(fmt.Sprintf("SQL Query: %s", formatQuery(q)))
 
-	var ath authdata.AuthData                                                                                            //модель для заполнения
-	err := r.client.QueryRow(ctx, q, login).Scan(&ath.Id, &ath.Login, &ath.State, &ath.Access_token, &ath.Refresh_token) //выполнение запроса и заполнение полей созданной модели
+	res, err := r.client.Query(ctx, q, auth.Login) //выполнение запроса и заполнение полей созданной модели
 	if err != nil {
-		return authdata.AuthData{}, err
+		panic(err)
+		//return false, err
 	}
-
-	return ath, nil
+	err = res.Scan(&auth.Id) //error number of field descriptions must equal number of values, got 5 and 0
+	fmt.Println(auth.Id)
+	if err!=nil {
+		panic(err)
+		// return false, err
+	}
+	return true, nil
 }
 
 func (r *repository) Update(ctx context.Context, user *authdata.AuthData) error {
 	q := `
-		UPDATE userdata
-		SET login = $2, state = $3, access_token = $4, refresh_token = $5
+		UPDATE userauth
+		SET  state = $2
 		WHERE id = $1
 		RETURNING id
 	`
 	
 	r.logger.Trace(fmt.Sprintf("SQL Query: %s", formatQuery(q)))
 
-	err := r.client.QueryRow(ctx, q, user.Id, user.Login, user.State, user.Access_token, user.Refresh_token).Scan(&user.Id)
+	err := r.client.QueryRow(ctx, q, user.Id, user.State).Scan(&user.Id)
 	if err!=nil{return err}
 	return nil
 }
 
-func (r *repository) Delete(ctx context.Context, id string) error {
+func (r *repository) Delete(ctx context.Context, id int) error {
 	q := `
-		DELETE FROM userdata RETURNING id=$1
+		DELETE FROM userauth RETURNING id=$1
 	`
-	
+	delete_me :=""
 	r.logger.Trace(fmt.Sprintf("SQL Query: %s", formatQuery(q)))
 
-	err := r.client.QueryRow(ctx, q, id).Scan(id)
+	res, err := r.client.Query(ctx, q, strconv.Itoa(id))
+	res.Scan(&delete_me)
 	if err!=nil{return err}
 	return nil
 }
