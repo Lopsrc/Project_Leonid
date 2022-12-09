@@ -2,12 +2,12 @@ package authdb
 
 import (
 	"context"
-	"errors"
+	// "errors"
 	"fmt"
-	"strconv"
+	// "strconv"
 	"strings"
 
-	"github.com/jackc/pgconn"
+	// "github.com/jackc/pgconn"
 	"go.mod/internal/authdata"
 	"go.mod/pkg/client/postgresql"
 	"go.mod/pkg/logging"
@@ -30,67 +30,31 @@ func (r *repository) Create(ctx context.Context, authdata *authdata.AuthData) er
 
 	r.logger.Trace(fmt.Sprintf("SQL Query: %s", formatQuery(q)))
 	//выполнение запроса, заполнение поля id
-	if err := r.client.QueryRow(ctx, q, authdata.Login, authdata.State, authdata.Access_token, authdata.Refresh_token).Scan(&authdata.Id); err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			pgErr = err.(*pgconn.PgError)
-			newErr := fmt.Errorf(fmt.Sprintf("SQL Error: %s, Detail: %s, Where: %s, Code: %s, SQLState: %s", pgErr.Message, pgErr.Detail, pgErr.Where, pgErr.Code, pgErr.SQLState()))
-			r.logger.Error(newErr)
-			return newErr
-		}
-		return err
-	}
-
+	// if err := r.client.QueryRow(ctx, q, authdata.Login, authdata.State, authdata.Access_token, authdata.Refresh_token).Scan(&authdata.Id); err != nil {
+	// 	var pgErr *pgconn.PgError
+	// 	if errors.As(err, &pgErr) {
+	// 		pgErr = err.(*pgconn.PgError)
+	// 		newErr := fmt.Errorf(fmt.Sprintf("SQL Error: %s, Detail: %s, Where: %s, Code: %s, SQLState: %s", pgErr.Message, pgErr.Detail, pgErr.Where, pgErr.Code, pgErr.SQLState()))
+	// 		r.logger.Error(newErr)
+	// 		return newErr
+	// 	}
+	// 	return err
+	// }
+	_, err := r.client.Exec(ctx, q,authdata.Login, authdata.State, authdata.Access_token, authdata.Refresh_token)
+	if err!=nil{return err}
+	
 	return nil
 }
 
-// Оставлю может нужна будет
-
-// func (r *repository) FindAll(ctx context.Context) (u []authdata.AuthData, err error) {			//Вряд ли нам нужен данный метод
-// q := `SELECT id, login FROM AuthData;`							//если нужно вывести все поля, то лучше это сделать через консоль на сервере
-// 	r.logger.Trace(fmt.Sprintf("SQL Query: %s", formatQuery(q)))
-
-// 	rows, err := r.client.Query(ctx, q)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	authors := make([]authdata.AuthData, 0)
-
-// 	for rows.Next() {
-// 		var ath author.Author
-
-// 		err = rows.Scan(&ath.ID, &ath.Name)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-
-// 		authors = append(authors, ath)
-// 	}
-
-// 	if err = rows.Err(); err != nil {
-// 		return nil, err
-// 	}
-
-// 	return authors, nil
-// }
-
-func (r *repository) FindOne(ctx context.Context, auth *authdata.AuthData) (bool, error) { //поиск пользователя
+func (r *repository) FindOne(ctx context.Context, auth *authdata.AuthData) (bool) { //поиск пользователя
 	q := `SELECT id FROM userauth WHERE login = $1` //запрос на поиск по login
 	r.logger.Trace(fmt.Sprintf("SQL Query: %s", formatQuery(q)))
-
-	res, err := r.client.Query(ctx, q, auth.Login) //выполнение запроса и заполнение полей созданной модели
-	if err != nil {
-		panic(err)
-		//return false, err
-	}
-	err = res.Scan(&auth.Id) //error number of field descriptions must equal number of values, got 5 and 0
-	fmt.Println(auth.Id)
-	if err!=nil {
-		panic(err)
-		// return false, err
-	}
-	return true, nil
+	fmt.Println(auth.Login)
+	err := r.client.QueryRow(ctx, q, auth.Login).Scan(&auth.Id) //выполнение запроса и заполнение полей созданной модели
+	if err!=nil {return false}
+	if err==nil{return true}
+	
+	return true
 }
 
 func (r *repository) Update(ctx context.Context, user *authdata.AuthData) error {
@@ -100,24 +64,23 @@ func (r *repository) Update(ctx context.Context, user *authdata.AuthData) error 
 		WHERE id = $1
 		RETURNING id
 	`
-	
 	r.logger.Trace(fmt.Sprintf("SQL Query: %s", formatQuery(q)))
 
-	err := r.client.QueryRow(ctx, q, user.Id, user.State).Scan(&user.Id)
+	_, err := r.client.Exec(ctx, q, user.Id, user.State)
 	if err!=nil{return err}
+
 	return nil
 }
 
 func (r *repository) Delete(ctx context.Context, id int) error {
 	q := `
-		DELETE FROM userauth RETURNING id=$1
+		DELETE FROM userauth WHERE id=$1
 	`
-	delete_me :=""
 	r.logger.Trace(fmt.Sprintf("SQL Query: %s", formatQuery(q)))
 
-	res, err := r.client.Query(ctx, q, strconv.Itoa(id))
-	res.Scan(&delete_me)
+	_, err := r.client.Exec(ctx, q, id)
 	if err!=nil{return err}
+
 	return nil
 }
 

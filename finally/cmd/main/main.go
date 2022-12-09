@@ -14,11 +14,9 @@ import (
 	"go.mod/pkg/logging"
 )
 
-//Решить проблему в userdata postgresql.go create() queryrow() не возвращает no rows in result set возможно scan() должен считывать string 
-//проверить findone()
-//Delete() in postgresql.go auth удаляет все данные из таблицы
- //error: number of field descriptions must equal number of values, got 5 and 0 postgresql.go -> FindOne()
-
+//
+//проверить findone() -> user:
+// error: can't scan into dest[3]: unable to assign to *string. Но данные считывает корректно, кроме даты 
 
 	
 
@@ -29,7 +27,6 @@ const (
 	CREATE = 6 //create user data
 	UPDATEA = 3	//change auth data
 	UPDATEU = 7 //change user data
-	FINDA = 4	//find auth data
 	FINDU = 8	//find user data
 	DELETEA = 5 //delete auth data
 	DELETEU = 9 //delete userdata	
@@ -47,16 +44,14 @@ type UserState struct{
 func main(){
 	
 	action := UserState{
-		action_db: CREATE,
+		action_db: FINDU,
 	}
 	auth := authdata.AuthData{
-		Login: "Sofia228@mail.ru",
-		State: false,
-		Access_token: "access_token_03",
-		Refresh_token: "refresh_token_03",
-	}
-	
-	
+		Login: "serpan2002@mail.ru",
+		State: true,
+		Access_token: "access_token_8",
+		Refresh_token: "refresh_token_8",
+	}	
 	logger := logging.GetLogger()
 	cfg := config.GetConfig()
 	
@@ -66,15 +61,16 @@ func main(){
 	repository := authdb.NewRepository(client, logger)
 	repositoryUserData := userdb.NewRepository(client, logger)
 
-	action.find_state, err = repository.FindOne(context.TODO(), &auth)
-	if err!=nil{logger.Fatalf("%v", err)}
+	action.find_state = repository.FindOne(context.TODO(), &auth)
+	fmt.Println(action.find_state)
+	// panic("1")
 
 	data := userdata.UserData{
 		Id: auth.Id,
 		Name: "Sofia",
 		Sex: "woman",
-		Birthdate: "2003-05-28",
-		Weight: 60,
+		Birthdate: "2001-04-04",
+		Weight: 80,
 	}
 
 	fmt.Println(data.Id)
@@ -112,7 +108,7 @@ func main(){
 			err = repository.Update(context.TODO(), &auth)
 			if err!=nil{logger.Fatalf("%v", err)}
 		}
-	case UPDATEU:
+	case UPDATEU://проверено
 		if !(action.find_state) {
 			fmt.Println("Пользователь не найден, изменения невозможны")
 		}else {
@@ -120,35 +116,35 @@ func main(){
 			err = repositoryUserData.Update(context.TODO(), &data)
 			if err!=nil{logger.Fatalf("%v", err)}
 		}
-	case FINDU:
-		
-	case DELETEA: //+++++++++++DELETEU  удаляет все данные из таблицы
+	case FINDU: //проверено
+		find_state_user, err := repositoryUserData.FindOne(context.TODO(), &data)
+		if !(find_state_user) {
+			fmt.Println("Пользователь не найден")
+			logger.Fatalf("%v", err)
+		}
+		fmt.Println("Пользователь найден")
+		fmt.Println(data)
+
+
+	case DELETEA: //проверено
 		if !(action.find_state) {
 			fmt.Println("Пользователь не найден, удаление невозможно")
 		}else {
 			fmt.Println(auth.Id)
 			err = repository.Delete(context.TODO(), auth.Id)
 			if err!=nil{logger.Fatalf("%v", err)}
+			fmt.Println(auth.Id)
+			err = repositoryUserData.Delete(context.TODO(), data.Id)
+			if err!=nil{logger.Fatalf("%v", err)}
 		}
-
-	
-	case DELETEU:
+	case DELETEU: //проверено
 		if !(action.find_state) {
 			fmt.Println("Пользователь не найден, удаление невозможно")
 		}else {
 			fmt.Println(auth.Id)
 			err = repositoryUserData.Delete(context.TODO(), data.Id)
 			if err!=nil{logger.Fatalf("%v", err)}
-		}
-
+		} 
 	}
-
-	// err = repository.Create(context.TODO(), &auth)
-	// if err!=nil {logger.Fatalf("%v", err)}
-	// fuser, err :=repository.FindOne(context.TODO(), "serpan2002@mail.ru")
-	// if err!=nil{logger.Fatalf("%v", err)}
-	fmt.Println("fuser")
-
-	// manage(CREATE)
-	
+	fmt.Println("fuser")	
 }
