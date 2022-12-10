@@ -18,9 +18,6 @@ type repository struct {
 	logger *logging.Logger
 }
 
-// FindAll implements authdata.Repository
-
-
 func formatQuery(q string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(q, "\t", ""), "\n", " ")
 }

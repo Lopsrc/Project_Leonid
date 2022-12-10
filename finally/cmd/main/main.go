@@ -3,23 +3,18 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
 
 	// "go.mod/internal/authdata"
-	"go.mod/internal/authdata/db"
+	"github.com/jackc/pgtype"
 	"go.mod/internal/authdata"
+	"go.mod/internal/authdata/db"
 	"go.mod/internal/config"
 	"go.mod/internal/userdata"
 	"go.mod/internal/userdata/db"
 	"go.mod/pkg/client/postgresql"
 	"go.mod/pkg/logging"
 )
-
-//
-//проверить findone() -> user:
-// error: can't scan into dest[3]: unable to assign to *string. Но данные считывает корректно, кроме даты 
-
-	
-
 
 const (
 	ENTER = 1	//enter
@@ -36,25 +31,26 @@ type UserState struct{
 	action_db int
 	find_state bool
 }
-// func Register(repo authdata.Repository ,auth *authdata.AuthData) (bool, error){
-// 	res, err := repo.FindOne(context.TODO(), auth)
-// 	if err != nil{return false, err}
-// 	return true, nil
-// }
+
+func GetData(years int, month int, day int) (date time.Time){
+	return date.AddDate(years-1,month-1,day-1)
+} 
+
 func main(){
 	
 	action := UserState{
-		action_db: FINDU,
+		action_db: DELETEA,
 	}
 	auth := authdata.AuthData{
-		Login: "serpan2002@mail.ru",
+		Login: "sofia01@mail.ru",
 		State: true,
-		Access_token: "access_token_8",
-		Refresh_token: "refresh_token_8",
+		Access_token: "access_token_1",
+		Refresh_token: "refresh_token_1",
 	}	
 	logger := logging.GetLogger()
 	cfg := config.GetConfig()
-	
+
+
 	client , err :=postgresql.NewClient(context.TODO(),3, cfg.Storage)
 	if err!=nil{logger.Fatal("%v", err)}
 
@@ -64,20 +60,26 @@ func main(){
 	action.find_state = repository.FindOne(context.TODO(), &auth)
 	fmt.Println(action.find_state)
 	// panic("1")
+	// tm := time.Time{}
 
+	dt := pgtype.Date{
+		Time: GetData(2005,7,14),
+	}
+	
 	data := userdata.UserData{
 		Id: auth.Id,
 		Name: "Sofia",
 		Sex: "woman",
-		Birthdate: "2001-04-04",
-		Weight: 80,
+		Birthdate: dt,
+		Weight: 55,
 	}
 
 	fmt.Println(data.Id)
 	switch action.action_db {
 	case ENTER: //проверено
-		if action.find_state {
+		if !(action.find_state) {
 			fmt.Println("Пользователь не найден, вход невозможен")
+			panic("Sosi huy")
 		}
 		fmt.Println("Вход разрешен")
 	case REGISTER://проверено
@@ -141,6 +143,13 @@ func main(){
 		if !(action.find_state) {
 			fmt.Println("Пользователь не найден, удаление невозможно")
 		}else {
+			data.Id =1
+
+			find_state_user, err := repositoryUserData.FindOne(context.TODO(), &data)
+			if !(find_state_user) {
+				fmt.Println("Пользователь не найден")
+				logger.Fatalf("%v", err)
+			}
 			fmt.Println(auth.Id)
 			err = repositoryUserData.Delete(context.TODO(), data.Id)
 			if err!=nil{logger.Fatalf("%v", err)}

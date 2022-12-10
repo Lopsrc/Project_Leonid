@@ -39,7 +39,7 @@ func (r *repository) Create(ctx context.Context, user *userdata.UserData) error 
 	// 	}
 	// 	return err
 	// }
-	_, err := r.client.Query(ctx, q, user.Id , user.Name, user.Sex, user.Birthdate,strconv.Itoa(user.Weight))
+	_, err := r.client.Query(ctx, q, user.Id , user.Name, user.Sex, user.Birthdate.Time,strconv.Itoa(user.Weight))
 	if err!=nil{
 		return err
 	}
@@ -53,12 +53,11 @@ func (r *repository) FindOne(ctx context.Context, user *userdata.UserData) (bool
 	r.logger.Trace(fmt.Sprintf("SQL Query: %s", formatQuery(q)))
 	fmt.Println(user.Id)
 	
-	var tmp userdata.UserData
 	res := r.client.QueryRow(ctx, q, user.Id)//.Scan(&user.Id, &user.Name, &user.Sex, &user.Birthdate, &user.Weight) //выполнение запроса и заполнение полей созданной модели
 	// if err!=nil {return false, err}
 	fmt.Println(user)
-	err := res.Scan(&tmp.Id, &tmp.Name, &tmp.Sex, &tmp.Birthdate , &tmp.Weight)
-	fmt.Println(tmp)
+	err := res.Scan(&user.Id, &user.Name, &user.Sex, &user.Birthdate , &user.Weight)
+	
 	if err!=nil {
 		return false, err
 	}
@@ -74,7 +73,7 @@ func (r *repository) Update(ctx context.Context, user *userdata.UserData) error 
 	`
 	r.logger.Trace(fmt.Sprintf("SQL Query: %s", formatQuery(q)))
 
-	_, err := r.client.Exec(ctx, q, user.Id, user.Name, user.Sex, user.Birthdate, user.Weight)
+	_, err := r.client.Exec(ctx, q, user.Id, user.Name, user.Sex, user.Birthdate.Time, user.Weight)
 	if err!=nil{return err}
 
 	return nil
@@ -87,7 +86,8 @@ func (r *repository) Delete(ctx context.Context, id int) error {
 	
 	r.logger.Trace(fmt.Sprintf("SQL Query: %s", formatQuery(q)))
 
-	_, err := r.client.Exec(ctx, q, id)
+	_, err := r.client.Query(ctx, q, id)
+	fmt.Println(id)
 	if err!=nil{return err}
 	return nil
 }
